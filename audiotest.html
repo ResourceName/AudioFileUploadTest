@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MP3 Uploader</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+    button { padding: 8px 16px; }
+    #status { margin-top: 10px; color: #444; }
+    #link { margin-top: 10px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>Upload MP3 (max 15 MB)</h1>
+
+  <input type="file" id="fileInput" accept=".mp3,audio/mpeg" />
+  <button id="uploadBtn">Upload</button>
+
+  <div id="status"></div>
+  <div id="link"></div>
+
+  <script>
+    const MAX_SIZE = 15 * 1024 * 1024; // 15 MB
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusEl = document.getElementById('status');
+    const linkEl = document.getElementById('link');
+
+    uploadBtn.addEventListener('click', async () => {
+      statusEl.textContent = '';
+      linkEl.textContent = '';
+
+      const file = fileInput.files[0];
+      if (!file) {
+        statusEl.textContent = 'Please choose a file first.';
+        return;
+      }
+
+      if (file.size > MAX_SIZE) {
+        statusEl.textContent = 'File is too large. Max size is 15 MB.';
+        return;
+      }
+
+      statusEl.textContent = 'Uploading to file.io...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('https://file.io', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          statusEl.textContent = 'Upload failed (network or server error).';
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          statusEl.textContent = 'Upload successful!';
+          linkEl.innerHTML = `Download link: <a href="${data.link}" target="_blank">${data.link}</a>`;
+        } else {
+          statusEl.textContent = 'Upload failed: ' + (data.message || 'Unknown error.');
+        }
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Upload failed (exception in script).';
+      }
+    });
+  </script>
+</body>
+</html>
